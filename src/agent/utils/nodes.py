@@ -13,7 +13,6 @@ def _get_model(model_name: str = "deepseek"):
     base_url = os.getenv("OPENAI_API_BASE")
     if not api_key:
         raise ValueError("API_KEY not found in environment variables.")
-
     if model_name == "openai":
         model = ChatOpenAI(temperature=0, model_name="gpt-4o", api_key=api_key)
     elif model_name == "deepseek":
@@ -32,7 +31,7 @@ def call_model(state):
 
     messages = [{"role": "user", "content": system_prompt}] + messages
 
-    llm = ChatOpenAI(temperature=0)
+    llm = _get_model()
 
     response = llm.invoke(messages)
 
