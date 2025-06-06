@@ -1,6 +1,7 @@
 import os
-from dotenv import load_dotenv
 
+from functools import lru_cache
+from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 
 load_dotenv()
@@ -27,12 +28,12 @@ You are a helpful assistant that answers questions about the world.
 """
 
 def call_model(state):
-    messages = state["massages"]
+    messages = state["messages"]
 
-    massages = [{"role": "user", "content": system_prompt}] + messages
+    messages = [{"role": "user", "content": system_prompt}] + messages
 
     llm = ChatOpenAI(temperature=0)
 
-    response = llm.invoke(massages)
+    response = llm.invoke(messages)
 
     return {"messages": [response]}
