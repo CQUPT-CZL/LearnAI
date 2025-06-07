@@ -7,6 +7,8 @@ requires-python = ">=3.11"
 dependencies = [
     "asyncpg>=0.30.0",
     "fastapi>=0.115.12",
+    "google-search-results>=2.4.2",
+    "langchain-community>=0.3.24",
     "langchain-mcp-adapters>=0.1.7",
     "langchain-openai>=0.3.19",
     "langgraph>=0.4.8",
