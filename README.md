@@ -1,5 +1,9 @@
 # LearnAI 项目
 
+<p align="center">
+    <img src="static/logo.png"/>
+</p>
+
 ## 项目简介
 LearnAI 是一个用于学习和开发人工智能应用的项目。它包含多个模块和工具，旨在帮助开发者快速构建和测试 AI 模型。
 
