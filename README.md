@@ -44,3 +44,6 @@ LearnAI/
 
 ## 贡献
 欢迎贡献代码！请 fork 本项目并提交 pull request。
+
+## 谢谢
+huduo
