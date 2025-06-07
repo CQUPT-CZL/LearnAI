@@ -29,7 +29,7 @@ You are a helpful assistant that answers questions about the world.
 def call_model(state):
     messages = state["messages"]
 
-    messages = [{"role": "user", "content": system_prompt}] + messages
+    messages = [{"role": "system", "content": system_prompt}] + messages
 
     llm = _get_model()
 
