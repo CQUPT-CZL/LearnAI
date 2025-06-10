@@ -1,0 +1,30 @@
+{
+  "name": "learnai-frontend",
+  "version": "1.0.0",
+  "description": "LearnAI Vue3 Frontend Application",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "serve": "python -m http.server 8080"
+  },
+  "dependencies": {
+    "vue": "^3.3.0",
+    "@vueuse/core": "^10.5.0",
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.4.0",
+    "vite": "^4.5.0"
+  },
+  "keywords": [
+    "vue3",
+    "ai",
+    "chat",
+    "frontend",
+    "learnai"
+  ],
+  "author": "LearnAI Team",
+  "license": "MIT"
+}

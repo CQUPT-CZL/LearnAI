@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LearnAI - Vue3 智能助手</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --border-radius: 12px;
+            --shadow-light: 0 2px 8px rgba(0, 0, 0, 0.05);
+            --shadow-medium: 0 8px 25px rgba(0, 0, 0, 0.1);
+            --shadow-heavy: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 1000px;
+            height: 90vh;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: var(--shadow-heavy);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Header Styles */
+        .app-header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 24px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .header-subtitle {
+            opacity: 0.9;
+            font-size: 16px;
+            font-weight: 400;
+        }
+
+        .status-indicator {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 12px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4ade80;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+
+        /* Chat Area */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #f8fafc;
+        }
+
+        .messages-container {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+
+        /* Welcome Screen */
+        .welcome-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .welcome-icon {
+            font-size: 72px;
+            margin-bottom: 24px;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .welcome-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 12px;
+        }
+
+        .welcome-subtitle {
+            font-size: 16px;
+            color: #6b7280;
+            margin-bottom: 32px;
+            line-height: 1.6;
+            max-width: 500px;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            width: 100%;
+            max-width: 700px;
+        }
+
+        .quick-action {
+            padding: 20px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .quick-action::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .quick-action:hover::before {
+            left: 100%;
+        }
+
+        .quick-action:hover {
+            border-color: #667eea;
+            box-shadow: var(--shadow-medium);
+            transform: translateY(-4px);
+        }
+
+        .quick-action-icon {
+            font-size: 24px;
+            margin-bottom: 12px;
+            color: #667eea;
+        }
+
+        .quick-action-title {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 6px;
+            font-size: 16px;
+        }
+
+        .quick-action-desc {
+            font-size: 14px;
+            color: #6b7280;
+            line-height: 1.4;
+        }
+
+        /* Messages */
+        .message {
+            margin-bottom: 24px;
+            display: flex;
+            align-items: flex-start;
+            animation: slideIn 0.4s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin: 0 12px;
+            flex-shrink: 0;
+            box-shadow: var(--shadow-light);
+        }
+
+        .message.user .message-avatar {
+            background: var(--primary-gradient);
+            color: white;
+            order: 2;
+        }
+
+        .message.bot .message-avatar {
+            background: var(--success-gradient);
+            color: white;
+        }
+
+        .message-content {
+            max-width: 65%;
+            padding: 18px 22px;
+            border-radius: 20px;
+            word-wrap: break-word;
+            line-height: 1.6;
+            position: relative;
+            font-size: 15px;
+        }
+
+        .message.user .message-content {
+            background: var(--primary-gradient);
+            color: white;
+            border-bottom-right-radius: 8px;
+            box-shadow: var(--shadow-light);
+        }
+
+        .message.bot .message-content {
+            background: white;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+            border-bottom-left-radius: 8px;
+            box-shadow: var(--shadow-light);
+        }
+
+        .message-time {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-top: 6px;
+            text-align: right;
+        }
+
+        .message.bot .message-time {
+            text-align: left;
+        }
+
+        /* Typing Indicator */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 18px 22px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 20px;
+            border-bottom-left-radius: 8px;
+            max-width: 65%;
+            box-shadow: var(--shadow-light);
+        }
+
+        .typing-text {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #9ca3af;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+            30% { transform: translateY(-8px); opacity: 1; }
+        }
+
+        /* Input Area */
+        .input-area {
+            padding: 24px;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .message-input {
+            width: 100%;
+            min-height: 54px;
+            max-height: 120px;
+            padding: 16px 60px 16px 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 27px;
+            outline: none;
+            font-size: 16px;
+            font-family: inherit;
+            resize: none;
+            transition: all 0.3s ease;
+            line-height: 1.5;
+            background: #f9fafb;
+        }
+
+        .message-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: white;
+        }
+
+        .input-actions {
+            position: absolute;
+            right: 8px;
+            bottom: 8px;
+            display: flex;
+            gap: 6px;
+        }
+
+        .action-btn {
+            width: 38px;
+            height: 38px;
+            border: none;
+            border-radius: 50%;
+            background: #f3f4f6;
+            color: #6b7280;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+
+        .action-btn:hover {
+            background: #e5e7eb;
+            color: #374151;
+            transform: scale(1.05);
+        }
+
+        .send-btn {
+            width: 54px;
+            height: 54px;
+            border: none;
+            border-radius: 50%;
+            background: var(--primary-gradient);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            font-size: 18px;
+            flex-shrink: 0;
+            box-shadow: var(--shadow-light);
+        }
+
+        .send-btn:hover:not(:disabled) {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Error Message */
+        .error-message {
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 16px 20px;
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .error-close {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: #dc2626;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px;
+        }
+
+        /* Character Counter */
+        .char-counter {
+            position: absolute;
+            bottom: -20px;
+            right: 0;
+            font-size: 12px;
+            color: #9ca3af;
+        }
+
+        .char-counter.warning {
+            color: #f59e0b;
+        }
+
+        .char-counter.danger {
+            color: #dc2626;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .app-container {
+                height: 95vh;
+                border-radius: 16px;
+            }
+
+            .app-header {
+                padding: 20px 16px;
+            }
+
+            .header-title {
+                font-size: 24px;
+            }
+
+            .status-indicator {
+                position: static;
+                margin-top: 12px;
+                justify-content: center;
+            }
+
+            .messages-container {
+                padding: 16px;
+            }
+
+            .message-content {
+                max-width: 85%;
+                padding: 14px 18px;
+            }
+
+            .input-area {
+                padding: 16px;
+            }
+
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .welcome-title {
+                font-size: 24px;
+            }
+
+            .welcome-icon {
+                font-size: 56px;
+            }
+        }
+
+        /* Scrollbar Styles */
+        .messages-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .messages-container::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 3px;
+        }
+
+        .messages-container::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .messages-container::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Loading Animation */
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        /* Fade Transition */
+        .fade-enter-active, .fade-leave-active {
+            transition: opacity 0.3s ease;
+        }
+
+        .fade-enter-from, .fade-leave-to {
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="app-container" :class="{ loading: isLoading }">
+            <!-- 应用头部 -->
+            <header class="app-header">
+                <h1 class="header-title">
+                    <i class="fas fa-robot"></i>
+                    LearnAI 智能助手
+                </h1>
+                <p class="header-subtitle">您的专属AI学习伙伴，随时为您答疑解惑 🚀</p>
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span>{{ connectionStatus }}</span>
+                </div>
+            </header>
+
+            <!-- 聊天区域 -->
+            <div class="chat-area">
+                <!-- 消息容器 -->
+                <div class="messages-container" ref="messagesContainer">
+                    <!-- 欢迎界面 -->
+                    <div v-if="messages.length === 0" class="welcome-screen">
+                        <div class="welcome-icon">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <h2 class="welcome-title">欢迎使用 LearnAI 助手！</h2>
+                        <p class="welcome-subtitle">
+                            我是您的AI学习伙伴，可以帮助您解答问题、学习新知识、解决编程难题。<br>
+                            选择下面的快捷操作开始对话，或直接输入您的问题。
+                        </p>
+                        <div class="quick-actions">
+                            <div class="quick-action" @click="sendQuickMessage('请介绍一下你自己，你能帮我做什么？')">
+                                <div class="quick-action-icon">
+                                    <i class="fas fa-user-circle"></i>
+                                </div>
+                                <div class="quick-action-title">认识AI助手</div>
+                                <div class="quick-action-desc">了解我的能力和可以为您提供的帮助</div>
+                            </div>
+                            <div class="quick-action" @click="sendQuickMessage('我想学习机器学习，请给我一个学习路线图')">
+                                <div class="quick-action-icon">
+                                    <i class="fas fa-brain"></i>
+                                </div>
+                                <div class="quick-action-title">学习指导</div>
+                                <div class="quick-action-desc">获取个性化的学习建议和路线规划</div>
+                            </div>
+                            <div class="quick-action" @click="sendQuickMessage('我在写Python代码时遇到了问题，你能帮我调试吗？')">
+                                <div class="quick-action-icon">
+                                    <i class="fas fa-code"></i>
+                                </div>
+                                <div class="quick-action-title">编程帮助</div>
+                                <div class="quick-action-desc">代码调试、算法解释、最佳实践指导</div>
+                            </div>
+                            <div class="quick-action" @click="sendQuickMessage('请推荐一些优质的学习资源和工具')">
+                                <div class="quick-action-icon">
+                                    <i class="fas fa-book-open"></i>
+                                </div>
+                                <div class="quick-action-title">资源推荐</div>
+                                <div class="quick-action-desc">获取精选的学习资源、工具和教程</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 错误提示 -->
+                    <transition name="fade">
+                        <div v-if="errorMessage" class="error-message">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span>{{ errorMessage }}</span>
+                            <button class="error-close" @click="clearError">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </transition>
+
+                    <!-- 消息列表 -->
+                    <transition-group name="fade">
+                        <div v-for="(message, index) in messages" :key="message.id" :class="['message', message.type]">
+                            <div class="message-avatar">
+                                <i :class="message.type === 'user' ? 'fas fa-user' : 'fas fa-robot'"></i>
+                            </div>
+                            <div class="message-content">
+                                <div v-html="formatMessage(message.content)"></div>
+                                <div class="message-time">{{ formatTime(message.timestamp) }}</div>
+                            </div>
+                        </div>
+                    </transition-group>
+
+                    <!-- 输入指示器 -->
+                    <transition name="fade">
+                        <div v-if="isTyping" class="message bot">
+                            <div class="message-avatar">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div class="typing-indicator">
+                                <span class="typing-text">AI正在思考中</span>
+                                <div class="typing-dots">
+                                    <div class="typing-dot"></div>
+                                    <div class="typing-dot"></div>
+                                    <div class="typing-dot"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </transition>
+                </div>
+
+                <!-- 输入区域 -->
+                <div class="input-area">
+                    <div class="input-container">
+                        <div class="input-wrapper">
+                            <textarea 
+                                v-model="currentMessage" 
+                                @keydown="handleKeyDown"
+                                @input="adjustTextareaHeight"
+                                ref="messageInput"
+                                class="message-input" 
+                                placeholder="输入您的问题...（Shift+Enter换行，Enter发送）"
+                                :disabled="isTyping"
+                                maxlength="1000"
+                            ></textarea>
+                            <div class="input-actions">
+                                <button class="action-btn" @click="clearMessages" title="清空对话" :disabled="messages.length === 0">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                <button class="action-btn" @click="exportChat" title="导出对话" :disabled="messages.length === 0">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            </div>
+                            <div class="char-counter" :class="getCharCounterClass()">
+                                {{ currentMessage.length }}/1000
+                            </div>
+                        </div>
+                        <button 
+                            class="send-btn" 
+                            @click="sendMessage" 
+                            :disabled="!canSendMessage"
+                            :title="getSendButtonTitle()"
+                        >
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, nextTick, onMounted, watch } = Vue;
+
+        createApp({
+            setup() {
+                // 响应式数据
+                const messages = ref([]);
+                const currentMessage = ref('');
+                const isTyping = ref(false);
+                const isLoading = ref(false);
+                const errorMessage = ref('');
+                const connectionStatus = ref('在线');
+                const messagesContainer = ref(null);
+                const messageInput = ref(null);
+                let messageIdCounter = 0;
+
+                // 计算属性
+                const canSendMessage = computed(() => {
+                    return currentMessage.value.trim() && !isTyping.value && currentMessage.value.length <= 1000;
+                });
+
+                // 工具函数
+                const generateMessageId = () => ++messageIdCounter;
+
+                const formatTime = (timestamp) => {
+                    const date = new Date(timestamp);
+                    const now = new Date();
+                    const diffInHours = (now - date) / (1000 * 60 * 60);
+                    
+                    if (diffInHours < 24) {
+                        return date.toLocaleTimeString('zh-CN', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                        });
+                    } else {
+                        return date.toLocaleDateString('zh-CN', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    }
+                };
+
+                const formatMessage = (content) => {
+                    // 简单的文本格式化，支持换行
+                    return content.replace(/\n/g, '<br>');
+                };
+
+                const getCharCounterClass = () => {
+                    const length = currentMessage.value.length;
+                    if (length > 900) return 'danger';
+                    if (length > 800) return 'warning';
+                    return '';
+                };
+
+                const getSendButtonTitle = () => {
+                    if (!currentMessage.value.trim()) return '请输入消息';
+                    if (isTyping.value) return 'AI正在回复中...';
+                    if (currentMessage.value.length > 1000) return '消息过长';
+                    return '发送消息 (Enter)';
+                };
+
+                // 滚动到底部
+                const scrollToBottom = async () => {
+                    await nextTick();
+                    if (messagesContainer.value) {
+                        messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+                    }
+                };
+
+                // 调整文本框高度
+                const adjustTextareaHeight = () => {
+                    const textarea = messageInput.value;
+                    if (textarea) {
+                        textarea.style.height = 'auto';
+                        textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+                    }
+                };
+
+                // 添加消息
+                const addMessage = (content, type = 'bot') => {
+                    const message = {
+                        id: generateMessageId(),
+                        content,
+                        type,
+                        timestamp: Date.now()
+                    };
+                    messages.value.push(message);
+                    scrollToBottom();
+                    return message;
+                };
+
+                // 错误处理
+                const clearError = () => {
+                    errorMessage.value = '';
+                };
+
+                const showError = (message) => {
+                    errorMessage.value = message;
+                    setTimeout(clearError, 5000); // 5秒后自动清除错误
+                };
+
+                // 检查连接状态
+                const checkConnection = async () => {
+                    try {
+                        const response = await axios.get('/api/health', { timeout: 5000 });
+                        connectionStatus.value = '在线';
+                        return true;
+                    } catch (error) {
+                        connectionStatus.value = '离线';
+                        return false;
+                    }
+                };
+
+                // 发送消息
+                const sendMessage = async () => {
+                    const message = currentMessage.value.trim();
+                    if (!canSendMessage.value) return;
+
+                    clearError();
+                    
+                    // 添加用户消息
+                    addMessage(message, 'user');
+                    currentMessage.value = '';
+                    adjustTextareaHeight();
+                    
+                    // 显示输入指示器
+                    isTyping.value = true;
+                    scrollToBottom();
+
+                    try {
+                        const response = await axios.post('/api/chat', 
+                            { message },
+                            { 
+                                timeout: 30000,
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                }
+                            }
+                        );
+
+                        if (response.data.status === 'success') {
+                            addMessage(response.data.response);
+                            connectionStatus.value = '在线';
+                        } else {
+                            throw new Error(response.data.response || '服务器返回错误');
+                        }
+                    } catch (error) {
+                        console.error('API调用失败:', error);
+                        
+                        let errorMsg = '抱歉，我暂时无法回应。';
+                        
+                        if (error.code === 'ECONNABORTED') {
+                            errorMsg = '请求超时，请稍后重试。';
+                        } else if (error.response) {
+                            errorMsg = `服务器错误 (${error.response.status}): ${error.response.statusText}`;
+                        } else if (error.request) {
+                            errorMsg = '网络连接失败，请检查网络连接。';
+                            connectionStatus.value = '离线';
+                        }
+                        
+                        showError(errorMsg);
+                        addMessage(errorMsg + ' 🔧');
+                    } finally {
+                        isTyping.value = false;
+                    }
+                };
+
+                // 快捷消息
+                const sendQuickMessage = (message) => {
+                    currentMessage.value = message;
+                    sendMessage();
+                };
+
+                // 清空对话
+                const clearMessages = () => {
+                    if (messages.value.length === 0) return;
+                    
+                    if (confirm('确定要清空所有对话记录吗？此操作无法撤销。')) {
+                        messages.value = [];
+                        clearError();
+                        messageInput.value?.focus();
+                    }
+                };
+
+                // 导出对话
+                const exportChat = () => {
+                    if (messages.value.length === 0) return;
+                    
+                    const chatData = messages.value.map(msg => ({
+                        type: msg.type === 'user' ? '用户' : 'AI助手',
+                        content: msg.content,
+                        time: formatTime(msg.timestamp)
+                    }));
+                    
+                    const exportText = chatData.map(msg => 
+                        `[${msg.time}] ${msg.type}: ${msg.content}`
+                    ).join('\n\n');
+                    
+                    const blob = new Blob([exportText], { type: 'text/plain;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `LearnAI对话记录_${new Date().toLocaleDateString('zh-CN')}.txt`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                };
+
+                // 处理键盘事件
+                const handleKeyDown = (event) => {
+                    if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault();
+                        sendMessage();
+                    }
+                };
+
+                // 监听消息变化，自动滚动
+                watch(messages, () => {
+                    scrollToBottom();
+                }, { deep: true });
+
+                // 定期检查连接状态
+                const startConnectionCheck = () => {
+                    checkConnection();
+                    setInterval(checkConnection, 30000); // 每30秒检查一次
+                };
+
+                // 组件挂载后的初始化
+                onMounted(() => {
+                    if (messageInput.value) {
+                        messageInput.value.focus();
+                    }
+                    startConnectionCheck();
+                });
+
+                return {
+                    // 数据
+                    messages,
+                    currentMessage,
+                    isTyping,
+                    isLoading,
+                    errorMessage,
+                    connectionStatus,
+                    messagesContainer,
+                    messageInput,
+                    
+                    // 计算属性
+                    canSendMessage,
+                    
+                    // 方法
+                    formatTime,
+                    formatMessage,
+                    getCharCounterClass,
+                    getSendButtonTitle,
+                    sendMessage,
+                    sendQuickMessage,
+                    clearMessages,
+                    clearError,
+                    exportChat,
+                    handleKeyDown,
+                    adjustTextareaHeight
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

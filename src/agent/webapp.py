@@ -45,10 +45,18 @@ if os.path.exists(frontend_path):
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
     """返回前端页面"""
+    # 优先使用Vue3版本的前端
+    vue3_frontend_file = os.path.join(frontend_path, "index-vue3.html")
+    if os.path.exists(vue3_frontend_file):
+        with open(vue3_frontend_file, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    
+    # 备用原版前端
     frontend_file = os.path.join(frontend_path, "index.html")
     if os.path.exists(frontend_file):
         with open(frontend_file, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
+    
     return HTMLResponse(content="<h1>LearnAI Frontend Not Found</h1>")
 
 @app.post("/api/chat", response_model=ChatResponse)
